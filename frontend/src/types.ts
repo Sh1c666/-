@@ -61,6 +61,7 @@ export interface SettingsView {
   llm: {
     base_url: string;
     model: string;
+    protocol: string;
     temperature: number;
     max_tokens: number;
     max_steps: number;

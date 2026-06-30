@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Composer from "./components/Composer";
 import Timeline from "./components/Timeline";
@@ -34,6 +34,13 @@ export default function App() {
     const saved = window.localStorage.getItem(THEME_KEY);
     return saved === "light" ? "light" : "dark";
   });
+  const abortRef = useRef<AbortController | null>(null);
+  const watchdogRef = useRef<number | null>(null);
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    if (watchdogRef.current) window.clearTimeout(watchdogRef.current);
+    watchdogRef.current = null;
+  }, []);
 
   const refreshProfiles = useCallback(async () => {
     try {
@@ -54,28 +61,63 @@ export default function App() {
     window.localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
+  useEffect(() => () => stop(), [stop]);
+
   const run = useCallback(
     async (text: string) => {
       if (!text.trim() || running) return;
+
+      if (settings && !settings.llm.has_api_key) {
+        setEvents([
+          {
+            type: "error",
+            message:
+              "尚未配置 LLM API Key，模型无法调用。请点击右上角「设置」填写 Key（例如 DeepSeek / GLM / OpenAI），或在 backend/.env 设置 NETPILOT_LLM_API_KEY 后重启后端。",
+          },
+        ]);
+        return;
+      }
+
+      stop();
+      const controller = new AbortController();
+      abortRef.current = controller;
       setEvents([]);
       setRunning(true);
+
       const ctx: Record<string, unknown> = {};
       if (target.trim()) ctx.target = target.trim();
       if (recentlyChanged) ctx.recently_changed = true;
+
+      const armWatchdog = () => {
+        if (watchdogRef.current) window.clearTimeout(watchdogRef.current);
+        watchdogRef.current = window.setTimeout(() => {
+          controller.abort();
+        }, 75_000);
+      };
+      armWatchdog();
+
       try {
-        for await (const ev of streamDiagnose(text, ctx)) {
+        for await (const ev of streamDiagnose(text, ctx, controller.signal)) {
+          armWatchdog();
           setEvents((prev) => [...prev, ev]);
         }
       } catch (e) {
-        setEvents((prev) => [
-          ...prev,
-          { type: "error", message: e instanceof Error ? e.message : String(e) },
-        ]);
+        const aborted = controller.signal.aborted;
+        const raw = e instanceof Error ? e.message : String(e);
+        const message = aborted
+          ? "等待模型响应超时或已被手动停止。请检查模型服务是否可达（Base URL / 网络 / API Key），或稍后重试。"
+          : /Failed to fetch|NetworkError|load failed/i.test(raw)
+            ? "无法连接到后端服务。请确认后端已启动（默认 http://127.0.0.1:8000），并检查浏览器控制台的网络请求。"
+            : raw;
+        setEvents((prev) => [...prev, { type: "error", message }]);
       } finally {
+        if (watchdogRef.current) window.clearTimeout(watchdogRef.current);
+        watchdogRef.current = null;
+        abortRef.current = null;
         setRunning(false);
       }
     },
-    [running, target, recentlyChanged]
+    [running, target, recentlyChanged, settings, stop]
   );
 
   const meta = useMemo(
@@ -156,6 +198,7 @@ export default function App() {
           setRecentlyChanged={setRecentlyChanged}
           running={running}
           onRun={() => run(symptom)}
+          onStop={stop}
         />
 
         <Timeline events={events} running={running} done={done} />

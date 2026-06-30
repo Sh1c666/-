@@ -649,6 +649,20 @@ select {
   color: var(--text-muted);
 }
 
+.btn-danger {
+  min-height: 46px;
+  padding: 0 18px;
+  border: 1px solid rgba(215, 117, 117, 0.45);
+  background: var(--fail-bg);
+  color: var(--fail);
+  font-weight: 700;
+}
+
+.btn-danger:hover {
+  background: rgba(215, 117, 117, 0.22);
+  border-color: var(--fail);
+}
+
 .btn-block,
 .btn-full {
   width: 100%;

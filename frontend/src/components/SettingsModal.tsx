@@ -14,13 +14,15 @@ interface Preset {
   label: string;
   base_url: string;
   model: string;
+  protocol?: string; // "openai" (default) | "anthropic"
   hint: string;
 }
 
 const PROVIDER_PRESETS: Preset[] = [
   { key: "deepseek", label: "DeepSeek", base_url: "https://api.deepseek.com", model: "deepseek-chat", hint: "platform.deepseek.com" },
   { key: "openai", label: "OpenAI", base_url: "https://api.openai.com/v1", model: "gpt-4o-mini", hint: "platform.openai.com" },
-  { key: "glm", label: "GLM (智谱)", base_url: "https://open.bigmodel.cn/api/paas/v4/", model: "glm-4.5", hint: "open.bigmodel.cn" },
+  { key: "glm", label: "GLM 智谱 (v4 端点)", base_url: "https://open.bigmodel.cn/api/paas/v4/", model: "glm-4-flash", hint: "免费 flash；高端模型此端点 1113" },
+  { key: "glm-claude", label: "GLM 智谱 (Claude 兼容)", base_url: "https://open.bigmodel.cn/api/anthropic", model: "glm-5.2", protocol: "anthropic", hint: "季度套餐走此端点；glm-4.6 / 5.2" },
   { key: "ollama", label: "Ollama (本地)", base_url: "http://localhost:11434/v1", model: "qwen2.5", hint: "零数据外发，key 随便填" },
 ];
 
@@ -30,6 +32,7 @@ export default function SettingsModal({ settings, onClose, onSave }: Props) {
   const [temperature, setTemperature] = useState(String(settings.llm.temperature));
   const [maxTokens, setMaxTokens] = useState(String(settings.llm.max_tokens));
   const [maxSteps, setMaxSteps] = useState(String(settings.llm.max_steps));
+  const [protocol, setProtocol] = useState(settings.llm.protocol || "openai");
   const [apiKey, setApiKey] = useState("");
   const [masked, setMasked] = useState(settings.privacy.mask_internal_ips);
   const [preset, setPreset] = useState("");
@@ -39,6 +42,7 @@ export default function SettingsModal({ settings, onClose, onSave }: Props) {
     if (p) {
       setBaseUrl(p.base_url);
       setModel(p.model);
+      setProtocol(p.protocol ?? "openai");
     }
     setPreset(key);
   };
@@ -48,6 +52,7 @@ export default function SettingsModal({ settings, onClose, onSave }: Props) {
       llm: {
         base_url: baseUrl,
         model,
+        protocol,
         temperature: Number(temperature) || 0.2,
         max_tokens: Number(maxTokens) || 2048,
         max_steps: Number(maxSteps) || 12,
@@ -92,6 +97,17 @@ export default function SettingsModal({ settings, onClose, onSave }: Props) {
             </span>
           </div>
 
+          <div className="field">
+            <label>API 协议</label>
+            <select value={protocol} onChange={(e) => setProtocol(e.target.value)}>
+              <option value="openai">OpenAI 兼容 (/chat/completions) — DeepSeek / OpenAI / GLM v4 / Ollama</option>
+              <option value="anthropic">Anthropic 兼容 (/v1/messages) — GLM Claude 兼容端点</option>
+            </select>
+            <span className="hint">
+              智谱季度套餐的高端模型（glm-4.6 / 5.2）只在 Anthropic 端点有额度；v4 端点会返回 1113。
+            </span>
+          </div>
+
           <div className="row2">
             <div className="field">
               <label>Base URL</label>
@@ -99,7 +115,7 @@ export default function SettingsModal({ settings, onClose, onSave }: Props) {
             </div>
             <div className="field">
               <label>模型</label>
-              <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="deepseek-chat / gpt-4o-mini / glm-4.5" />
+              <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="deepseek-chat / gpt-4o-mini / glm-4-flash / glm-5.2" />
             </div>
           </div>
 

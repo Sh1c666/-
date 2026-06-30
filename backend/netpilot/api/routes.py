@@ -72,6 +72,7 @@ def _public_settings() -> dict[str, Any]:
         "llm": {
             "base_url": cfg.llm.base_url,
             "model": cfg.llm.model,
+            "protocol": cfg.llm.protocol,
             "temperature": cfg.llm.temperature,
             "max_tokens": cfg.llm.max_tokens,
             "max_steps": cfg.llm.max_steps,

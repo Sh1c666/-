@@ -7,6 +7,7 @@ interface Props {
   setRecentlyChanged: (v: boolean) => void;
   running: boolean;
   onRun: () => void;
+  onStop?: () => void;
 }
 
 export default function Composer({
@@ -18,6 +19,7 @@ export default function Composer({
   setRecentlyChanged,
   running,
   onRun,
+  onStop,
 }: Props) {
   const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
@@ -77,9 +79,15 @@ export default function Composer({
             />
           </label>
 
-          <button className="btn-primary btn-block" onClick={onRun} disabled={running || !symptom.trim()}>
-            {running ? "排查中…" : "开始排查"}
-          </button>
+          {running ? (
+            <button className="btn-danger btn-block" onClick={() => onStop?.()}>
+              停止排查
+            </button>
+          ) : (
+            <button className="btn-primary btn-block" onClick={onRun} disabled={!symptom.trim()}>
+              开始排查
+            </button>
+          )}
         </div>
       </div>
 

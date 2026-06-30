@@ -18,7 +18,12 @@ async function* parseSSE(resp: Response): AsyncGenerator<AgentEvent> {
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
 
-    // SSE frames are separated by a blank line.
+    // Servers may separate SSE frames with CRLF (\r\n\r\n) or LF (\n\n).
+    // Normalize CRLF → LF so a single "\n\n" split works for both. Without
+    // this, a CRLF server (e.g. sse-starlette) yields zero events here and
+    // the timeline stays blank even though the backend streams fine.
+    buffer = buffer.replace(/\r\n/g, "\n");
+
     let sep: number;
     while ((sep = buffer.indexOf("\n\n")) >= 0) {
       const frame = buffer.slice(0, sep);
@@ -40,12 +45,14 @@ async function* parseSSE(resp: Response): AsyncGenerator<AgentEvent> {
 
 export async function* streamDiagnose(
   symptom: string,
-  context: Record<string, unknown>
+  context: Record<string, unknown>,
+  signal?: AbortSignal
 ): AsyncGenerator<AgentEvent> {
   const resp = await fetch("/api/diagnose", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ symptom, context }),
+    signal,
   });
   yield* parseSSE(resp);
 }

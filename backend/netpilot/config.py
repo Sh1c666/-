@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_base_url: str = "https://api.deepseek.com"
     llm_model: str = "deepseek-chat"
+    # "openai" (OpenAI-compatible /chat/completions) or "anthropic" (Anthropic
+    # Messages API, e.g. BigModel's /api/anthropic). The latter is needed when a
+    # provider's subscription only covers its Claude-compatible endpoint.
+    llm_protocol: str = "openai"
     llm_temperature: float = 0.2
     llm_max_tokens: int = 2048
 
@@ -86,6 +90,7 @@ class LLMConfig(BaseModel):
     api_key: str = ""
     base_url: str = "https://api.deepseek.com"
     model: str = "deepseek-chat"
+    protocol: str = "openai"  # "openai" | "anthropic" — picks the transport in llm_client
     temperature: float = 0.2
     max_tokens: int = 2048
     max_steps: int = 12
@@ -113,6 +118,7 @@ class Runtime:
                 api_key=startup.llm_api_key,
                 base_url=startup.llm_base_url,
                 model=startup.llm_model,
+                protocol=startup.llm_protocol,
                 temperature=startup.llm_temperature,
                 max_tokens=startup.llm_max_tokens,
                 max_steps=startup.agent_max_steps,
