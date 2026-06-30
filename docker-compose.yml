@@ -1,0 +1,26 @@
+# NetPilot — one-command launch.
+#   docker compose up --build
+# Then open http://localhost:8000 and enter your API Key in 设置 (DeepSeek by
+# default). Profiles + settings persist in the netpilot-data volume.
+
+services:
+  netpilot:
+    build: .
+    image: netpilot:latest
+    container_name: netpilot
+    ports:
+      - "${NETPILOT_PORT:-8000}:8000"
+    environment:
+      # 0.0.0.0 so the published port actually reaches uvicorn.
+      NETPILOT_HOST: "0.0.0.0"
+      NETPILOT_PORT: "8000"
+      # Optional: provide the LLM key here. Leave blank to enter it in the UI
+      # (it is then persisted to the volume). Compose reads this from a root
+      # .env file or your shell — never commit a real key.
+      NETPILOT_LLM_API_KEY: "${NETPILOT_LLM_API_KEY:-}"
+    volumes:
+      - netpilot-data:/app/backend/data
+    restart: unless-stopped
+
+volumes:
+  netpilot-data:

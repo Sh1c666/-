@@ -1,0 +1,37 @@
+# Keep the build context lean and avoid baking local state / secrets in.
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/*.egg-info/
+
+# Virtual envs (huge — must never enter the image)
+**/.venv/
+**/venv/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+**/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# Local runtime state & secrets
+backend/data/
+**/.env
+**/.env.*
+!**/.env.example
+
+# VCS / OS / meta
+.git/
+.gitignore
+.DS_Store
+**/Thumbs.db
+
+# Don't copy Docker's own files into the image
+Dockerfile
+.dockerignore
+docker-compose.yml
