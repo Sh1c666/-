@@ -205,14 +205,14 @@ async def _chat_anthropic(cfg, messages: list[dict], tools: list[dict]) -> _Comp
             timeout=REQUEST_TIMEOUT_S,
             max_retries=1,
         )
-        kwargs: dict[str, Any] = dict(
-            model=cfg.model,
-            messages=msgs,
-            tools=_to_anthropic_tools(tools),
-            tool_choice={"type": "auto"},
-            temperature=cfg.temperature,
-            max_tokens=cfg.max_tokens,
-        )
+        kwargs: dict[str, Any] = {
+            "model": cfg.model,
+            "messages": msgs,
+            "tools": _to_anthropic_tools(tools),
+            "tool_choice": {"type": "auto"},
+            "temperature": cfg.temperature,
+            "max_tokens": cfg.max_tokens,
+        }
         if system:
             kwargs["system"] = system
         resp = await client.messages.create(**kwargs)
