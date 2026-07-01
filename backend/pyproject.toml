@@ -67,9 +67,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Sh1c666/-"
-Documentation = "https://github.com/Sh1c666/-/blob/main/docs/ARCHITECTURE.md"
-Issues = "https://github.com/Sh1c666/-/issues"
+Homepage = "https://github.com/Sh1c666/netpilot"
+Documentation = "https://github.com/Sh1c666/netpilot/blob/main/docs/ARCHITECTURE.md"
+Issues = "https://github.com/Sh1c666/netpilot/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

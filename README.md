@@ -1,6 +1,6 @@
 # NetPilot · AI 网络故障排查 Copilot
 
-[![CI](https://github.com/Sh1c666/-/actions/workflows/ci.yml/badge.svg)](https://github.com/Sh1c666/-/actions/workflows/ci.yml)
+[![CI](https://github.com/Sh1c666/netpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/Sh1c666/netpilot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![React](https://img.shields.io/badge/frontend-React%2BTS-61dafb.svg)](https://react.dev/)
@@ -83,7 +83,7 @@ NetPilot 是一个开源、跨平台的网络故障排查 Copilot。它不是又
 - Node.js ≥ 18(仅开发/构建前端时需要)
 - 一个**支持 Function Calling** 的 OpenAI 兼容 API Key —— DeepSeek / OpenAI / GLM(智谱) / Ollama 任选,见下方「Provider 兼容性」
 
-### 1. 后端
+### 准备:后端依赖与配置(两种运行方式都要先做)
 
 ```bash
 cd backend
@@ -94,30 +94,47 @@ python -m venv .venv
 
 cp .env.example .env
 # 编辑 .env,填入 NETPILOT_LLM_API_KEY + 选 provider(也可启动后在 UI 设置里填,有预设下拉)
-
-./.venv/Scripts/python.exe -m netpilot.main   # 启动在 http://127.0.0.1:8000
 ```
 
-### 2. 前端(两种方式)
+> ⚠️ **后端必须开。** 下面两种方式无论选哪种,都得先有一个终端把后端跑起来——前端只是网页外壳,真正调 LLM、跑诊断工具、做隐私脱敏的都是后端。只开前端不开后端,页面能进但排查会失败。
 
-**A. 生产模式(推荐自用):** 构建一次,后端直接托管静态文件,只有一个进程。
+### 方式 A · 自用 / 部署:单进程,访问 http://127.0.0.1:8000 ✅
+
+构建一次前端,之后后端会自动托管它,**日常只开一个进程**:
 
 ```bash
+# 1) 构建前端(只需一次;以后改了前端代码再重新 build)
 cd frontend
 npm install
 npm run build          # 产物输出到 frontend/dist
-# 然后访问 http://127.0.0.1:8000 即可(后端已托管前端)
+
+# 2) 启动后端(它会托管刚构建好的前端)
+cd ../backend
+./.venv/Scripts/python.exe -m netpilot.main
 ```
 
-**B. 开发模式(改前端代码用热更新):**
+打开 **http://127.0.0.1:8000**。如果打开是一段 JSON(写着 “Frontend not built yet”),说明第 1 步没成功生成 `frontend/dist`,回到 `cd frontend && npm run build` 重做一次。
+
+### 方式 B · 开发前端:双进程,访问 http://localhost:5173
+
+改前端代码、要热更新时用。**两个终端都要开**:
 
 ```bash
+# 终端 1:后端(一直开着别关)
+cd backend
+./.venv/Scripts/python.exe -m netpilot.main
+
+# 终端 2:前端热更新(另开一个终端)
 cd frontend
 npm install
-npm run dev            # Vite 开发服务器在 http://localhost:5173,/api 自动代理到 :8000
+npm run dev            # Vite 在 http://localhost:5173,/api 自动代理到 :8000
 ```
 
-打开浏览器,在"设置"里确认模型与 API Key,在输入框描述故障现象(或点示例),点 **开始排查**。
+打开 **http://localhost:5173**。Vite 把所有 `/api` 请求转发给后端,排查功能照常工作;改前端代码即时刷新。
+
+> 💡 **为什么 5173 能打开、8000 打不开?** 在方式 B 里,8000 是后端(不直接出网页),网页在 5173。如果你只跑了 `npm run dev` 而没开终端 1 的后端,5173 能进界面但一排查就报错。想"打开 8000 直接看到完整界面",用方式 A。
+
+两种方式进入后,都在「设置」里确认模型与 API Key,在输入框描述故障现象(或点示例),点 **开始排查**。
 
 ### 3. Docker(最省事)
 
