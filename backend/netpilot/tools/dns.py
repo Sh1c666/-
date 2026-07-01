@@ -48,7 +48,11 @@ class DnsLookupTool(Tool):
     def _resolve(self, host: str, rdtype: str, timeout: float) -> ToolResult:
         resolver = dns.resolver.Resolver(configure=True)
         resolver.lifetime = timeout
-        resolver.timeout = timeout
+        # Per-server timeout must be < lifetime, else a single dead/unresponsive
+        # nameserver (e.g. one injected by a VPN/proxy, common in corp/roaming
+        # networks) eats the whole budget and the resolver never tries the next
+        # server in the list — every lookup then times out.
+        resolver.timeout = min(timeout, 1.5)
 
         records: list[dict[str, str]] = []
         try:
